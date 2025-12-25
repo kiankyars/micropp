@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 class ShardedMLP(nn.Module):
@@ -7,16 +6,14 @@ class ShardedMLP(nn.Module):
         
         # 1. Calculate how many layers THIS GPU is responsible for
         layers_per_gpu = total_layers // world_size
-        start_layer = rank * layers_per_gpu
-        end_layer = start_layer + layers_per_gpu
         
         self.rank = rank
         self.is_first = (rank == 0)
-        self.is_last = (rank == world_size - 1)
+        self.is_last = (rank + 1 == world_size)
         
         # 2. Build the local stack of layers
         layers = []
-        for i in range(start_layer, end_layer):
+        for _ in range(layers_per_gpu):
             # For a simple MLP, every layer looks the same
             layers.append(nn.Linear(hidden_dim, hidden_dim))
             layers.append(nn.ReLU())
