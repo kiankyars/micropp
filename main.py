@@ -76,7 +76,7 @@ def main():
         start_time = time.time()
         
         # This function handles the Send/Recv/Compute orchestration
-        loss = naive_pipeline_step(model, comms, data, targets, HIDDEN_DIM)
+        loss = naive_pipeline_step(model, comms, data, targets, HIDDEN_DIM, device)
         
         # Optimizer Step (All ranks do this locally after backward pass completes)
         optimizer.step()

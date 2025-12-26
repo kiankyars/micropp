@@ -54,14 +54,15 @@ class PipelineComms:
             # .contiguous() is required before sending
             dist.send(tensor.contiguous(), dst=self.next_rank)
 
-    def recv_forward(self, shape, dtype, device):
+    def recv_forward(self, shape, device, dtype=torch.float32):
         """Receive activation from the previous GPU."""
         if self.prev_rank is None:
             return None # Rank 0 generates its own data
         
         # We must allocate an empty buffer to receive the data
         tensor = torch.zeros(shape, dtype=dtype, device=device)
-        dist.recv(tensor, src=self.prev_rank)
+        # print(dist.recv(tensor, src=self.prev_rank))
+        (dist.recv(tensor, src=self.prev_rank))
         return tensor
 
     def send_backward(self, tensor):
@@ -69,11 +70,12 @@ class PipelineComms:
         if self.prev_rank is not None:
             dist.send(tensor.contiguous(), dst=self.prev_rank)
 
-    def recv_backward(self, shape, dtype, device):
+    def recv_backward(self, shape, device, dtype=torch.float32):
         """Receive gradients from the next GPU."""
         if self.next_rank is None:
             return None # Last Rank generates gradients from Loss
         
         tensor = torch.zeros(shape, dtype=dtype, device=device)
+        # if self.next_rank rank is not part of the process, we return -1
         dist.recv(tensor, src=self.next_rank)
         return tensor
