@@ -14,8 +14,11 @@ def init_distributed():
 
     # 2. Set Device
     if torch.cuda.is_available():
-        device = torch.device("cuda")
+        # each conditional statement returns the device type
+        device = torch.device(f"cuda:{local_rank}")
     elif torch.backends.mps.is_available():
+        # >>> torch.device("mps")
+        # device(type='mps')
         device = torch.device("mps")
     elif torch.cpu.is_available():
         device = torch.device("cpu")
@@ -24,8 +27,9 @@ def init_distributed():
     
     # 3. Initialize Group
     if torch.cuda.is_available():
+        # Crucial: Pin this process to a specific GPU
+        torch.cuda.set_device(local_rank)
         dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
-        torch.cuda.device(local_rank)
     else:        
         dist.init_process_group(backend="gloo", rank=rank, world_size=world_size)
     
