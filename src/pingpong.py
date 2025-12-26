@@ -3,6 +3,7 @@ from comms import init_distributed, PipelineComms
 
 def run_ping_pong():
     rank, world_size, device = init_distributed()
+    torch.distributed.barrier()
     print(rank, world_size, device)
     comms = PipelineComms(rank, world_size)
 

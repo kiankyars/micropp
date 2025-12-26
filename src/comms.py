@@ -52,6 +52,12 @@ class PipelineComms:
         """Send activation to the next GPU."""
         if self.next_rank is not None:
             # .contiguous() is required before sending
+            # Blocking communication (dist.send) means 
+            # the program waits until the send is complete 
+            # before proceeding, which is simple and easier
+            #  to reason about. Async (isend) allows overlapping
+            #  computation and communication, 
+            # improving efficiency, but adds complexity.
             dist.send(tensor.contiguous(), dst=self.next_rank)
 
     def recv_forward(self, shape, device, dtype=torch.float32):

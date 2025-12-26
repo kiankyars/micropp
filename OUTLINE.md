@@ -2,19 +2,28 @@
 
 1. **Distributed Basics:**
 * **Concept:** What is a Rank, World Size, and Process Group?
-* **Tool:** `torch.distributed` (NCCL backend).
-* **Lab:** Spawn 2 processes on 1 GPU (or CPU) and ping-pong a tensor.
+    * **The Process Group:** Imagine a conference call. Before anyone can talk, they must dial in. `init_process_group` is dialing in.
+    * **World Size:** The total number of people on the call (e.g., 4 GPUs).
+    * **Rank:** Your unique ID badge (0, 1, 2, 3).
+    * **Rank 0** is the "Boss" (usually handles logging, saving checkpoints, and data loading).
+* **Lab:** Spawn 2 processes on GPU (or CPU) and ping-pong a tensor.
+    * *Run command:* `torchrun --nproc_per_node=2 lab_pingpong.py`
 
 
 2. **The Memory Wall:**
 * **Concept:** Why models don't fit on one GPU.
 * **Activity:** Calculate memory usage of a 10B param model vs. VRAM available.
+    * **Model Size:** 10 Billion Parameters (10B).
+    * **Precision:** FP32 (4 bytes per parameter).
+    * **Static Memory:** .
+    * **Hardware:** NVIDIA RTX 4090 (24 GB VRAM).
+    * **Problem:** . The model physically cannot exist on one card.
 * **Solution:** Model Partitioning (slicing `nn.Sequential`).
+    * See the init in [model.py](src/model.py) to see how this is done.
 
 
 3. **The Naive Solution (and its failure):**
 * **Concept:** Stop-and-wait execution.
-* **Visual:** Draw a "Timeline Diagram" showing massive idle gaps (bubbles).
 * **Lab:** Implement the Naive Schedule. Measure utilization (it will be low).
 
 
@@ -22,8 +31,6 @@
 * **Concept:** Micro-batches. Changing the loop from "Batch" to "Chunks."
 * **Algorithms:** GPipe (Fill -> Drain) vs. 1F1B (Steady State).
 * **Lab:** Implement Micro-batching. Watch utilization spike.
-
-
 
 ---
 
@@ -36,8 +43,6 @@
 * **P2P:** `send_tensor(tensor, dest)` and `recv_tensor(shape, src)`.
 * *Note:* Start with blocking communication (`dist.send`) for simplicity. Upgrade to async (`isend`) later if needed.
 
-
-
 **2. `model.py` (The Subject)**
 
 * **Deep MLP:** A class `DeepMLP(nn.Module)` with 16+ `Linear` layers.
@@ -46,8 +51,5 @@
 
 **3. `schedule.py` (The Engine)**
 
-* **Micro-batcher:** A utility to `split` a batch tensor into  chunks.
+* **Micro-batcher:** A utility to `split` a batch tensor into chunks.
 * **The Orchestrator:** A loop that manages the "Clock Cycle":
-* If Rank 0: Feed input chunk .
-* If Rank : Calculate Loss.
-* Else: Recv  Forward  Send.

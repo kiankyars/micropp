@@ -13,9 +13,9 @@ def naive_pipeline_step(model, comms, batch, targets, hidden_dim, device):
         input_data = batch.to(device)
     else:
         # Others wait to receive from the left
-        batch_size = batch.shape[0]
+        batch_size = batch.shape[0] if batch is not None else 32 # Mock size
         shape = (batch_size, hidden_dim)
-        input_data = comms.recv_forward(shape)
+        input_data = comms.recv_forward(shape, device)
         # TEACHING MOMENT: In real PP, we need autograd to track this input tensor!
         input_data.requires_grad = True
 
@@ -36,7 +36,7 @@ def naive_pipeline_step(model, comms, batch, targets, hidden_dim, device):
         grad_to_send = input_data.grad 
     else:
         # Receive gradients coming from the right
-        grad_from_next = comms.recv_backward(output.shape)
+        grad_from_next = comms.recv_backward(output.shape, device)
         
         # B. Compute Local Gradients
         # This is the "Backprop" step connecting the received grad to our weights
@@ -49,7 +49,7 @@ def naive_pipeline_step(model, comms, batch, targets, hidden_dim, device):
         
     return loss.item() if model.is_last else None
 
-def gpipe_pipeline_step(model, comms, batch, targets, hidden_dim, chunks=4):
+def gpipe_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, device):
     """
     GPipe Schedule: FWD all chunks -> BWD all chunks.
     """
@@ -67,7 +67,7 @@ def gpipe_pipeline_step(model, comms, batch, targets, hidden_dim, chunks=4):
         if comms.rank == 0:
             mb = micro_batches[i].to(device)
         else:
-            mb = comms.recv_forward(shape)
+            mb = comms.recv_forward(shape, device)
             mb.requires_grad = True # Critical for autograd!
             
         # 2. Forward
@@ -105,7 +105,7 @@ def gpipe_pipeline_step(model, comms, batch, targets, hidden_dim, chunks=4):
             grad_to_send = inp.grad
             total_loss += loss_val.item()
         else:
-            grad_from_next = comms.recv_backward(out.shape)
+            grad_from_next = comms.recv_backward(out.shape, device)
             out.backward(grad_from_next)
             grad_to_send = inp.grad
             

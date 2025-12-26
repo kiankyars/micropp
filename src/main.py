@@ -12,7 +12,8 @@ Musician 1's sheet says: "You are playing the Violin (GPU 0)."
 
 Musician 2's sheet says: "You are playing the Viola (GPU 1)."
 
-They all read the same notes (code), but they play on different instruments (GPUs) because of that initial setup instruction.'''
+They all read the same notes (code), but they play on different instruments (GPUs) because of that initial setup instruction.
+'''
 import torch
 import torch.optim as optim
 import time
@@ -96,5 +97,16 @@ def main():
         print("--- Training Complete ---")
     torch.distributed.destroy_process_group()
 
+'''What will happen:
+
+torchrun launches 4 copies of main.py.
+
+It assigns RANK 0, 1, 2, 3 automatically.
+
+Rank 0 creates random data and sends it to Rank 1...
+
+Rank 3 calculates loss and sends gradients back to Rank 2...
+
+You will see the logs print to your terminal.'''
 if __name__ == "__main__":
     main()
