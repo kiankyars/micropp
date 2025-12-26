@@ -17,12 +17,15 @@ def init_distributed():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
-    else:
+    elif torch.cpu.is_available():
         device = torch.device("cpu")
+    else:
+        exit()
     
     # 3. Initialize Group
     if torch.cuda.is_available():
         dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
+        torch.cuda.device(local_rank)
     else:        
         dist.init_process_group(backend="gloo", rank=rank, world_size=world_size)
     
@@ -44,13 +47,13 @@ class PipelineComms:
             # .contiguous() is required before sending
             dist.send(tensor.contiguous(), dst=self.next_rank)
 
-    def recv_forward(self, shape, dtype=torch.float32):
+    def recv_forward(self, shape, dtype, device):
         """Receive activation from the previous GPU."""
         if self.prev_rank is None:
             return None # Rank 0 generates its own data
         
         # We must allocate an empty buffer to receive the data
-        tensor = torch.zeros(shape, dtype=dtype, device='cuda')
+        tensor = torch.zeros(shape, dtype=dtype, device=device)
         dist.recv(tensor, src=self.prev_rank)
         return tensor
 
@@ -59,11 +62,11 @@ class PipelineComms:
         if self.prev_rank is not None:
             dist.send(tensor.contiguous(), dst=self.prev_rank)
 
-    def recv_backward(self, shape, dtype=torch.float32):
+    def recv_backward(self, shape, dtype, device):
         """Receive gradients from the next GPU."""
         if self.next_rank is None:
             return None # Last Rank generates gradients from Loss
         
-        tensor = torch.zeros(shape, dtype=dtype, device='cuda')
+        tensor = torch.zeros(shape, dtype=dtype, device=device)
         dist.recv(tensor, src=self.next_rank)
         return tensor
