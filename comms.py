@@ -2,16 +2,11 @@ import torch
 import torch.distributed as dist
 import os
 
-def init_distributed():
+def init_distributed(rank, world_size, local_rank):
     """
     Standard PyTorch boilerplate to set up the process group.
-    In a real course, explain that 'rank' is ID and 'world_size' is total GPUs.
+    These variables are usually set by torchrun or slurm
     """
-    # These variables are usually set by torchrun or slurm
-    rank = int(os.environ["RANK"])
-    world_size = int(os.environ["WORLD_SIZE"])
-    local_rank = int(os.environ["LOCAL_RANK"])
-
     # Map the process to a specific GPU
     torch.cuda.set_device(local_rank)
     
@@ -24,7 +19,6 @@ class PipelineComms:
     def __init__(self, rank, world_size):
         self.rank = rank
         self.world_size = world_size
-        
         # Define Neighbors
         # If I am Rank 0, I have no previous neighbor (None)
         self.prev_rank = rank - 1 if rank > 0 else None

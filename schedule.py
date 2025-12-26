@@ -13,8 +13,7 @@ def naive_pipeline_step(model, comms, batch, targets, hidden_dim):
         input_data = batch.cuda()
     else:
         # Others wait to receive from the left
-        # Note: We need to know the shape beforehand (hardcoded here for simplicity)
-        batch_size = batch.shape[0] if batch is not None else 32 # Mock size
+        batch_size = batch.shape[0]
         shape = (batch_size, hidden_dim)
         input_data = comms.recv_forward(shape)
         # TEACHING MOMENT: In real PP, we need autograd to track this input tensor!
