@@ -6,7 +6,8 @@
 ![](/docs/interleaved-GPipe.png)
 
 #### Bubbles
-Increasing the number of microbatches m, is necessary for making the bubble fraction small; increasing the memory demand.
+- ![](/docs/bubble.png)
+- Increasing the number of microbatches m, is necessary for making the bubble fraction small; increasing the memory demand.
 ![](https://siboehm.com/assets/img/distributed-DNNs/Gpipe_bubble_fractions.png)
 
 #### Memory Demand
