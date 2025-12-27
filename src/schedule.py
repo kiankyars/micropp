@@ -20,6 +20,8 @@ def naive_pipeline_step(model: ShardedMLP, comms: PipelineComms, batch, targets,
         shape = (batch, hidden_dim)
         # Others wait to receive from the left
         input_data = comms.recv_forward(shape, device)
+        # When we receive a tensor via dist.recv, it is a leaf node
+        # By default, leaf nodes have requires_grad = False.
         # Because we set requires_grad = True, the engine
         # continues the chain rule all the way back to that input tensor
         # Without this, the tensor would be treated as a constant by autograd and

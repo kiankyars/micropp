@@ -15,7 +15,6 @@ def init_distributed():
     # 2. Set Device
     if torch.cuda.is_available():
         # each conditional statement returns the device type
-        # available_gpus = [torch.cuda.device(i) for i in range(torch.cuda.device_count())]
         device = torch.device(f"cuda:{local_rank}")
     elif torch.backends.mps.is_available():
         # >>> torch.device("mps")

@@ -31,9 +31,9 @@ import torch.optim as optim
 import time
 
 # Import our modules
-from comms import init_distributed, PipelineComms
-from model import ShardedMLP
-from schedule import naive_pipeline_step
+from src.comms import init_distributed, PipelineComms
+from src.model import ShardedMLP
+from src.schedule import naive_pipeline_step
 
 # Hyperparameters
 BATCH_SIZE = 32

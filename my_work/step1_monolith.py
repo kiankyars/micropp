@@ -10,7 +10,7 @@ TOTAL_LAYERS = 16
 STEPS = 50
 
 # 2. The Monolithic Model
-# This is what we will eventually "shard" across multiple GPUs
+# This is what we will eventually shard across multiple GPUs
 class MonolithicMLP(nn.Module):
     def __init__(self, dim, depth):
         super().__init__()
@@ -18,8 +18,6 @@ class MonolithicMLP(nn.Module):
         for _ in range(depth):
             layers.append(nn.Linear(dim, dim))
             layers.append(nn.ReLU())
-        # pipeline stages aren't always identical; the first has an Embedding/Input layer,
-        # the middle has Transformer/MLP blocks, and the last has the Classifier/Loss
         layers.append(nn.Linear(dim, 2))
         self.net = nn.Sequential(*layers)
         self.loss_fn = nn.CrossEntropyLoss()
