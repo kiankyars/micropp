@@ -73,17 +73,14 @@ part1.train(); part2.train()
 for step in range(STEPS):
     optimizer.zero_grad()
     # --- FORWARD PASS ---
-    # Step A: Run first half
     hidden = part1(fixed_input)
     # In PP, we'd send 'hidden' to the next GPU here.
     # We must ensure 'hidden' is ready to receive gradients later.
     if cuda:
         hidden = hidden.to(torch.cuda.device(1))
-    # We call hidden.retain_grad() strictly for teaching purposes—to
-    # see exactly what value would have been sent over the network 
-    # if this were distributed. Without it, hidden.grad would be None.
+    # retain_grad() for inspection: in PP, this is what we'd send backward.
+    # Without it, hidden.grad would be None.
     hidden.retain_grad()
-    # Step B: Run second half using output of first
     loss = part2(hidden, fixed_target)
     # --- BACKWARD PASS ---
     '''
@@ -98,21 +95,20 @@ for step in range(STEPS):
     Continues back through .to() operation
     Computes gradients for part1's parameters
     The graph connects automatically because:
-    hidden from part1() has requires_grad=True
+    hidden from part1() has requires_grad=True,
+    since outputs from modules with trainable parameters
+     automatically require gradients, and
     .to() operations preserve the graph connection
     The optimizer tracks both parts' parameters
     '''
     loss.backward()
-    # Verify both parts get gradients
     # The distributed version (in schedule.py) manually handles
-    # this because it's split across processes; in a single
+    # hidden.grad because it's split across processes; in a single
     # process, autograd handles gradients automatically.
-    if step == 0:  # Check once
-        p1_has_grad = any(p.grad is not None for p in part1.parameters())
-        p2_has_grad = any(p.grad is not None for p in part2.parameters())
-        print(f"Part1 has grads: {p1_has_grad}, Part2 has grads: {p2_has_grad}")
     # Because we called .retain_grad(), we can now see hidden.grad.
-    # In PP, this is the tensor we would 'send_backward' to Rank 0.
+    # In PP, this is the tensor we 'send_backward' to Rank 0.
+    if step == 0:  # Check once
+        print(hidden.requires_grad, hidden.grad is not None, hidden.grad)
     optimizer.step()
     if step % 5 == 0:
         print(f"Step {step:02d} | Loss: {loss.item():.6f}")
