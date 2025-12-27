@@ -1,4 +1,7 @@
-def naive_pipeline_step(model, comms, batch, targets, hidden_dim, device):
+from src.comms import PipelineComms
+from src.model import ShardedMLP
+
+def naive_pipeline_step(model: ShardedMLP, comms: PipelineComms, batch, targets, hidden_dim, device):
     """
     A single training step using the Naive (Stop-and-Wait) schedule.
     """
@@ -12,19 +15,21 @@ def naive_pipeline_step(model, comms, batch, targets, hidden_dim, device):
     else:
         # we need the shape here, but not for above because 
         # the first device just gets the data straight from 
-        # the data loader and doesn't need to receive 
-        # with a buffer that it makes
+        # the data loader and doesn't need to make a buffer
+        # tensor to receive the activations
         shape = (batch, hidden_dim)
         # Others wait to receive from the left
         input_data = comms.recv_forward(shape, device)
         # Because we set requires_grad = True, the engine
         # continues the chain rule all the way back to that input tensor
         # Without this, the tensor would be treated as a constant by autograd and
-        # input_data.grad would be None so upstream model parameters wouldn’t update
-        # In real PP, autograd tracks this input tensor
+        # input_data.grad would be set to None in backward(),
+        # so earlier (upstream) model parameters wouldn’t update
         input_data.requires_grad = True
 
     # B. Compute
+    # if you are not last, you just calculate activations
+    # if you are last, you also calculate the loss with targets, which is output
     output = model(input_data, targets if comms.rank == comms.world_size -1 else None)
 
     # C. Send data to the right
@@ -40,17 +45,20 @@ def naive_pipeline_step(model, comms, batch, targets, hidden_dim, device):
         grad_to_send = input_data.grad 
     else:
         # Receive gradients coming from the right
+        # whereas in the forward pass, we don't have the batch size unless we are the first device,
+        # since gradients are propagated for every activation computed, we can just take
+        # the activation dimensions for the shape of the gradient tensor we receive in backward()
         grad_from_next = comms.recv_backward(output.shape, device)
         # B. Compute Local Gradients
         # This is the "Backprop" step connecting the received grad to our weights
         output.backward(grad_from_next)
         grad_to_send = input_data.grad
         '''
-        ( ∂Weights/∂Loss ): calculates how to change its own internal layers.
-        Input Gradients: If Rank 0 is the very first layer (taking in the raw data/images), it
-        technically calculates the gradient with respect to the raw input, but we
-        discard this because we can't "update" the training data!'''
-
+        ∂Weights/∂Loss are the gradients which tell the model how to change its own internal layers.
+        ∂Input/∂Loss are the gradients which we back-propagate; if Rank 0 is the very first layer
+        (taking in the raw data/images), it technically calculates the gradient with respect to
+        the raw input, but we discard this because we can't "update" the training data!
+        '''
     # C. Send Gradients
     if not model.is_first:
         comms.send_backward(grad_to_send)

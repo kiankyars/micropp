@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class ShardedMLP(nn.Module):
-    def __init__(self, input_dim, hidden_dim, total_layers, rank, world_size):
+    def __init__(self, hidden_dim, total_layers, rank, world_size):
         super().__init__()
         
         # 1. Calculate how many layers THIS GPU is responsible for
@@ -18,9 +18,10 @@ class ShardedMLP(nn.Module):
             layers.append(nn.Linear(hidden_dim, hidden_dim))
             layers.append(nn.ReLU())
             
-        self.net = nn.Sequential(*layers)
         if self.is_last:
             self.loss_fn = nn.CrossEntropyLoss()
+            layers.append(nn.Linear(hidden_dim, 2))
+        self.net = nn.Sequential(*layers)
 
     def forward(self, x, targets=None):
         # Run the local chunk of the network

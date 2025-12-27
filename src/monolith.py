@@ -4,10 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 
 # 1. Hyperparameters
+BATCH_SIZE = 32
 HIDDEN_DIM = 128
 TOTAL_LAYERS = 16
 STEPS = 50
-BATCH_SIZE = 32
 
 # 2. The Monolithic Model
 # This is what we will eventually "shard" across multiple GPUs
@@ -18,6 +18,7 @@ class MonolithicMLP(nn.Module):
         for _ in range(depth):
             layers.append(nn.Linear(dim, dim))
             layers.append(nn.ReLU())
+        layers.append(nn.Linear(dim, 2))
         self.net = nn.Sequential(*layers)
         self.loss_fn = nn.CrossEntropyLoss()
 
@@ -29,7 +30,7 @@ class MonolithicMLP(nn.Module):
 torch.manual_seed(42)
 
 model = MonolithicMLP(HIDDEN_DIM, TOTAL_LAYERS)
-optimizer = optim.SGD(model.parameters(), lr=0.01)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # Generate one fixed batch to overfit
 fixed_input = torch.randn(BATCH_SIZE, HIDDEN_DIM)
@@ -49,6 +50,6 @@ for step in range(STEPS):
     duration = time.time() - start_time
     
     if step % 5 == 0:
-        print(f"Step {step+1} | Loss: {loss:.4f} | Time: {duration:.3f}s")
+        print(f"Step {step} | Loss: {loss:.4f} | Time: {duration:.3f}s")
 
 print(f"Final Monolith Loss: {loss.item():.6f}")
