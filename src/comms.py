@@ -50,21 +50,11 @@ class PipelineComms:
 
     def send_forward(self, tensor):
         """Send activation to the next GPU."""
-        if self.next_rank is not None:
-            # .contiguous() is required before sending
-            # Blocking communication (dist.send) means 
-            # the program waits until the send is complete 
-            # before proceeding, which is simple and easier
-            #  to reason about. Async (isend) allows overlapping
-            #  computation and communication, 
-            # improving efficiency, but adds complexity.
-            dist.send(tensor.contiguous(), dst=self.next_rank)
+        # .contiguous() is required before sending
+        dist.send(tensor.contiguous(), dst=self.next_rank)
 
     def recv_forward(self, shape, device, dtype=torch.float32):
         """Receive activation from the previous GPU."""
-        if self.prev_rank is None:
-            return None # Rank 0 generates its own data
-        
         # We must allocate an empty buffer to receive the data
         tensor = torch.zeros(shape, dtype=dtype, device=device)
         # print(dist.recv(tensor, src=self.prev_rank))
@@ -73,14 +63,16 @@ class PipelineComms:
 
     def send_backward(self, tensor):
         """Send gradients back to the previous GPU."""
-        if self.prev_rank is not None:
-            dist.send(tensor.contiguous(), dst=self.prev_rank)
+        # Blocking communication (dist.send) means 
+        # the program waits until the send is complete 
+        # before proceeding, which is simple and easier
+        # to reason about. Async (isend) allows overlapping
+        # computation and communication, 
+        # increasing efficiency and complexity.
+        dist.send(tensor.contiguous(), dst=self.prev_rank)
 
     def recv_backward(self, shape, device, dtype=torch.float32):
         """Receive gradients from the next GPU."""
-        if self.next_rank is None:
-            return None # Last Rank generates gradients from Loss
-        
         tensor = torch.zeros(shape, dtype=dtype, device=device)
         # if self.next_rank rank is not part of the process, we return -1
         dist.recv(tensor, src=self.next_rank)
