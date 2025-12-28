@@ -1,4 +1,4 @@
 - I'm doing this with you so we can learn through problem-solving.
 - I write pseudocode for each function before implementation.
 - I demonstrate concepts through small examples.
-- I'm going to do this without many takes.
+- I'm going to do this without many takes so it's authentic.

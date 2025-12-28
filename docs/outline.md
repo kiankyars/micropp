@@ -2,9 +2,7 @@
 
 ### [Monolith](https://github.com/kiankyars/micropp/blob/main/src/monolith.py)
 
-Start with a MLP and train it on a single CPU.
-
-- **Concept:** Establish a baseline.
+- **Concept:** Establish a baseline on a single CPU.
 - **Lab:** Just `nn.Sequential` with 16 layers and a simple training loop.
 
 ### Motivation for PP
@@ -25,12 +23,16 @@ Cut the `nn.Sequential` into two pieces: `part1` and `part2`.
 
 ### Distributed Basics
 
-- **Concept:** What is a Rank, World Size, and Process Group?
+* **Concept:** Rank, World Size, and Process Group.
   - **The Process Group:** Imagine a conference call. Before anyone can talk, they must dial in. `init_process_group` is dialing in.
   - **World Size:** The total number of people on the call (e.g., 4 GPUs).
   - **Rank:** Your unique ID badge (0, 1, 2, 3).
   - **Rank 0** is the "Boss" (usually handles logging, saving checkpoints, and data loading).
-- **Lab:** Spawn 2 processes on GPU (or CPU) and ping-pong a tensor.
+* **Concept:** What torchrun does on a CPU.
+  - **Process Isolation:** `torchrun` spawns completely separate Python interpreter instances. Each has its own memory space and its own "Global Interpreter Lock" (GIL).
+  - **True Parallelism:** Because these are separate processes (not threads), the OS schedules them across different physical CPU cores.
+  - **The Network Bridge:** When you call `dist.send`, the data leaves Process A and travels through a local networking socket (the "Gloo" backend) to reach Process B.
+* **Lab:** Spawn 2 processes on GPU (or CPU) and ping-pong a tensor.
 
 ### Pipeline Parallelism
 

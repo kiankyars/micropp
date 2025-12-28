@@ -7,11 +7,13 @@
 - ![](https://lilianweng.github.io/posts/2021-09-25-train-large/naive-data-parallelism.png)
 
 #### Forward Pass
+
 1. Compute intermediate on GPU1.
 2. Transfer the resulting tensor to GPU2.
 3. GPU2 computes the loss of the model.
 
 #### Backward Pass
+
 1. GPU2 calculates derivative of loss w.r.t its weights and input.
 2. Send the gradients w.r.t. intermediate from GPU2 to GPU1.
 3. GPU1 then completes the backward pass based on the gradients it was sent.
