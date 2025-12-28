@@ -15,7 +15,7 @@
 2. Send the gradients w.r.t. intermediate from GPU2 to GPU1.
 3. GPU1 then completes the backward pass based on the gradients it was sent.
 
-![](https://github.com/kiankyars/micropp/docs/PP_pebble_graph.gif)
+![](./PP_pebble_graph.gif)
 
 By looking at the pebble graph, we can observe some inefficiencies of naive model parallelism:
 

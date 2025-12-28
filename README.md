@@ -1,6 +1,6 @@
 # micropp
 
-![](https://github.com/kiankyars/micropp/docs/micropp.png)
+![](./micropp.png)
 
 1. **`comms.py`**: The primitive transport layer.
 2. **`model.py`**: The sharded Deep MLP.

@@ -1,6 +1,6 @@
 ### Syllabus
 
-#### [Monolith](/src/monolith.py):
+#### [Monolith](https://github.com/kiankyars/micropp/blob/main/src/monolith.py):
 
 Start with a MLP and train it on a single CPU.
 
@@ -16,7 +16,7 @@ Start with a MLP and train it on a single CPU.
   - **Hardware:** NVIDIA RTX 4090 (24 GB VRAM).
 - **Solution:** Model Partitioning (slicing `nn.Sequential`).
 
-#### [Manual](/src/manual.py):
+#### [Manual](https://github.com/kiankyars/micropp/blob/main/src/manual.py):
 
 Cut the `nn.Sequential` into two pieces: `part1` and `part2`.
 
@@ -34,17 +34,17 @@ Cut the `nn.Sequential` into two pieces: `part1` and `part2`.
   - _Run command:_ `torchrun --nproc_per_node=2 lab_pingpong.py`
 
 
-#### [The Naive Solution](https://github.com/kiankyars/micropp/docs/naive.md):
+#### [The Naive Solution](./naive.md):
 
 - **Concept:** Stop-and-wait execution.
 - **Lab:** Implement the Naive Schedule. Measure utilization using nvidia-smi if cuda is available.
 
-#### [GPipe](https://github.com/kiankyars/micropp/docs/gpipe.md):
+#### [GPipe](./gpipe.md):
 
 - **Concept:** Changing the loop from "Batch" to "Chunks."
 - **Lab:** GPipe (Fill -> Drain).
 
-#### [1F1B](https://github.com/kiankyars/micropp/docs/1f1b.md):
+#### [1F1B](./1f1b.md):
 
 - **Concept:** Interleaving Chunks.
 - **Lab:** 1F1B (Steady State).

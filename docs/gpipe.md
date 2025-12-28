@@ -3,10 +3,10 @@
 ![](https://1.bp.blogspot.com/-fXZxDPKaEaw/XHlt7OEoMtI/AAAAAAAAD0I/hYM_6uq2BTwaunHZRxWd7JUJV43fEysvACLcBGAs/s640/image2.png)
 
 #### Interleaved GPipe
-![](https://github.com/kiankyars/micropp/docs/interleaved-GPipe.png)
+![](./interleaved-GPipe.png)
 
 #### Bubbles
-- ![](https://github.com/kiankyars/micropp/docs/bubble.png)
+- ![](./bubble.png)
 - Increasing the number of microbatches m, is necessary for making the bubble fraction small; increasing the memory demand.
 As the number of micro-batches (m) increases relative to the number of GPUs (n), the bubble fraction ( 
 m
