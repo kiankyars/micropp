@@ -155,7 +155,7 @@ def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, de
     # Storage for "Phase 2"
     input_buffers = [None] * chunks 
     output_buffers = [None] * chunks
-    async_requests = [] # Track async send requests
+    async_requests = [] # Keep request objects alive to prevent buffer deallocation
     
     # Schedule Logic
     # Rank 0 (First) has max warmup (needs to fill the whole pipe)
@@ -177,7 +177,7 @@ def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, de
             output = model(input_data, micro_targets[micro_batch_idx])
         else:
             output = model(input_data)
-            # Store the async request handle
+            # Store request to keep tensor buffer alive (prevents GC before Gloo finishes)
             req = comms.isend_forward(output.detach())
             async_requests.append(req)
 
@@ -197,8 +197,7 @@ def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, de
             
         if comms.rank != 0:
             # Store the async request handle
-            req = comms.isend_backward(input_data.grad)
-            async_requests.append(req)
+            comms.send_backward(input_data.grad)
         
         if comms.rank == comms.world_size - 1:
             return loss
@@ -224,10 +223,6 @@ def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, de
         res = run_backward(i + num_1f1b)
         if comms.rank == comms.world_size - 1:
             total_loss += res
-    
-    # Wait for all async sends to complete before returning
-    for req in async_requests:
-        req.wait()
     
     # Return Loss
     return total_loss if comms.rank == comms.world_size - 1 else None

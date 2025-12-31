@@ -77,9 +77,6 @@ class PipelineComms:
         # if self.next_rank rank is not part of the process, we return -1
         dist.recv(tensor, src=self.next_rank)
         return tensor
-
-    def isend_backward(self, tensor):
-        return dist.isend(tensor.contiguous(), dst=self.prev_rank)
     
     def isend_forward(self, tensor):
         return dist.isend(tensor.contiguous(), dst=self.next_rank)
