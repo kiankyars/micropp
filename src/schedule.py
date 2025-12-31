@@ -142,7 +142,6 @@ def gpipe_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, device
     if comms.rank == comms.world_size - 1:
         return total_loss
 
-
 def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, device):
     """
     1F1B Schedule: Interleaves Forward and Backward passes.
@@ -156,6 +155,7 @@ def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, de
     # Storage for "Phase 2"
     input_buffers = [None] * chunks 
     output_buffers = [None] * chunks
+    async_requests = [] # Track async send requests
     
     # Schedule Logic
     # Rank 0 (First) has max warmup (needs to fill the whole pipe)
@@ -164,7 +164,7 @@ def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, de
     num_1f1b = chunks - num_warmup
     
     def run_forward(micro_batch_idx):
-        # A. Setup Input
+        # ... Setup Input ...
         if comms.rank == 0:
             input_data = micro_batches[micro_batch_idx]
         else:
@@ -177,29 +177,29 @@ def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, de
             output = model(input_data, micro_targets[micro_batch_idx])
         else:
             output = model(input_data)
-            comms.isend_forward(output.detach())
+            # Store the async request handle
+            req = comms.isend_forward(output.detach())
+            async_requests.append(req)
 
-        # C. Buffer
         input_buffers[micro_batch_idx] = input_data
         output_buffers[micro_batch_idx] = output
 
     def run_backward(micro_batch_idx):
-        # Retrieve State
         input_data = input_buffers[micro_batch_idx]
         output = output_buffers[micro_batch_idx]
         
         if comms.rank == comms.world_size - 1:
-            # On Last Rank, 'output' IS the loss
             loss = output / chunks
             loss.backward()
         else:
-            # On other ranks, we need gradients from downstream
             grad_from_next = comms.recv_backward(output.shape, device)
             output.backward(grad_from_next)
             
-        # Send gradients backward (if not first)
         if comms.rank != 0:
-            comms.isend_backward(input_data.grad)
+            # Store the async request handle
+            req = comms.isend_backward(input_data.grad)
+            async_requests.append(req)
+        
         if comms.rank == comms.world_size - 1:
             return loss
 
@@ -224,6 +224,10 @@ def onef_oneb_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, de
         res = run_backward(i + num_1f1b)
         if comms.rank == comms.world_size - 1:
             total_loss += res
-
+    
+    # Wait for all async sends to complete before returning
+    for req in async_requests:
+        req.wait()
+    
     # Return Loss
     return total_loss if comms.rank == comms.world_size - 1 else None

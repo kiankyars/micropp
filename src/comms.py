@@ -79,7 +79,7 @@ class PipelineComms:
         return tensor
 
     def isend_backward(self, tensor):
-        dist.isend(tensor.contiguous(), dst=self.prev_rank)
+        return dist.isend(tensor.contiguous(), dst=self.prev_rank)
     
     def isend_forward(self, tensor):
-        dist.isend(tensor.contiguous(), dst=self.next_rank)
+        return dist.isend(tensor.contiguous(), dst=self.next_rank)
