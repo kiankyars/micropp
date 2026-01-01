@@ -54,7 +54,7 @@ for i in range(rank * (TOTAL_LAYERS // world_size) * 2):  # 2 params per layer (
     torch.randn(1)  # Consume RNG state
 
 if rank == 0:
-    print(f"--- Starting Micro PP on {world_size} Processes (Mac/CPU) ---")
+    print(f"--- Starting Micro PP on {world_size} Processes ({device}) ---")
 
 # 2. Initialize the Sharded Model
 # Each process only initializes its specific slice of layers

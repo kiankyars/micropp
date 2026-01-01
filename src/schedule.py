@@ -110,7 +110,7 @@ def gpipe_pipeline_step(model, comms, batch, targets, hidden_dim, chunks, device
 
     # --- PHASE 2: ALL BACKWARDS (Drain the Pipe) ---
     if comms.rank == comms.world_size - 1:
-        total_loss = torch.zeros(output.shape)
+        total_loss = torch.zeros(output.shape, device=device)
     # Layers: Reverse Order (handled by Autograd).
     # Micro-batches: Forward Order (handled by loop to match the send/recv order).
     # Think of a conveyor belt

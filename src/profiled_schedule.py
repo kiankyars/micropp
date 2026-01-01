@@ -78,7 +78,7 @@ def gpipe_pipeline_step(model: ShardedMLP, comms: PipelineComms, profiler: Pipel
         output_buffers.append(output)
     
     if comms.rank == comms.world_size - 1:
-        total_loss = torch.zeros(output.shape)
+        total_loss = torch.zeros(output.shape, device=device)
     
     for i in range(chunks):
         input_data = input_buffers[i]

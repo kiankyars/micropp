@@ -28,7 +28,8 @@ def init_distributed():
         exit()
     # 3. Initialize Group
     if torch.cuda.is_available():
-        dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
+        dist.init_process_group(backend="nccl", rank=rank, world_size=world_size,
+                                device_id=device)
     else:        
         # The code dist.init_process_group(...) is a Global State Setter.
         #  It initializes the background communication threads (C++ NCCL backend).
