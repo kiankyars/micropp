@@ -58,10 +58,10 @@ If you do not call `.detach()`, the `output` tensor remains "hooked" to the comp
 
 #### 2. The "Micro" Architecture Logic
 
-By detaching, you are explicitly saying: *"I am done with this forward pass locally. I am handing off a static copy of the data to the next device"*.
+By detaching, you are explicitly saying: _"I am done with this forward pass locally. I am handing off a static copy of the data to the next device"_.
 
-* **Forward:** Next device gets a "clean" tensor and restarts the graph using `requires_grad = True`.
-* **Backward:** We manually reconnect the chain later when we receive the gradient and call `output.backward(received_grad)`.
+- **Forward:** Next device gets a "clean" tensor and restarts the graph using `requires_grad = True`.
+- **Backward:** We manually reconnect the chain later when we receive the gradient and call `output.backward(received_grad)`.
 
 #### 3. Summary
 
