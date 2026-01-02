@@ -1,6 +1,6 @@
 # micropp
 
-![](./micropp.png)
+![](docs/micropp.png)
 
 ## Quick Start
 
